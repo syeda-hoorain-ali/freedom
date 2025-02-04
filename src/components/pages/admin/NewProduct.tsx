@@ -1,8 +1,8 @@
 "use client";
 import Image from "next/image";
 import { BiSolidDiscount } from "react-icons/bi";
-import { ChangeEvent, useState } from "react"
-import { Controller, useForm } from "react-hook-form";
+import { ChangeEvent, KeyboardEvent, useEffect, useState } from "react"
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { DollarSign, Loader2, ReceiptText, X } from "lucide-react"
 import { toast } from "react-toastify";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +17,8 @@ import { addNewProduct } from "@/lib/data";
 import { categories } from "@/lib/categories";
 import { productSchema } from "@/schema/productSchema";
 import { useRouter } from "next/navigation";
-import * as z from "zod";
+import { z } from "zod";
+import { Label } from "@/components/ui/label";
 
 const NewProduct = () => {
   type Product = z.infer<typeof productSchema>
@@ -37,12 +38,17 @@ const NewProduct = () => {
       description: '',
       images: [],
       price: 0,
-      // qualities: [],
+      qualities: [],
       tagNumber: 0,
       tax: 0,
       discount: 0,
     }
   })
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "qualities" as never,
+  });
 
   const onSubmit = async (data: Product) => {
     setIsSubmitting(true)
@@ -78,6 +84,14 @@ const NewProduct = () => {
   const handleDelete = (index: number) => {
     const newPreviewImages = previewImages.filter((_, i) => i !== index)
     setPreviewImages(newPreviewImages);
+  }
+
+  const addQuality = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && e.currentTarget.value.trim() !== "") {
+      e.preventDefault();
+      append(e.currentTarget.value.trim());
+      e.currentTarget.value = "";
+    }
   }
 
 
@@ -202,7 +216,7 @@ const NewProduct = () => {
                   <FormField
                     name="category"
                     control={form.control}
-                    render={({ field }) => (
+                    render={() => (
                       <FormItem>
                         <FormLabel>Category</FormLabel>
 
@@ -228,6 +242,32 @@ const NewProduct = () => {
                       </FormItem>
                     )}
                   />
+
+                  <div>
+                    <Label htmlFor="qualities">Qualities</Label>
+                    <fieldset className="flex flex-wrap gap-3 border border-input rounded-md py-1 pb-2 px-3 shadow-sm">
+                      {fields.map((_, i) => (
+                        <div key={i} className="inline-flex gap-2 items-center bg-gray-200 px-3 py-2 rounded-sm">
+                          <span className="text-sm">{form.getValues(`qualities.${i}`)}</span>
+                          <Button
+                            type="button"
+                            onClick={() => remove(i)}
+                            variant="ghost"
+                            className="h-full w-5 p-0 -mr-1 text-red-500hover:text-red-700"
+                          >
+                            <X size={14} />
+                          </Button>
+                        </div>
+                      ))}
+
+                      <Input className="bordernone inline-flex max-w-auto" id="qualities" onKeyDown={addQuality} />
+                    </fieldset>
+
+                    <FormMessage>
+                      {form.formState.errors.qualities?.message}
+                    </FormMessage>
+
+                  </div>
 
                   <div className="flex gap-3">
                     <FormField

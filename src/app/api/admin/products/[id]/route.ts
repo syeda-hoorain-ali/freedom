@@ -1,22 +1,20 @@
-
-// /app/api/admin/update-product/route.ts
-
-import dbConnect from "@/lib/dbConnect"
-import ProductModel from "@/models/Product";
-import { getServerSession } from "next-auth";
-import { NextResponse } from "next/server";
-import { authOptions } from "../../auth/[...nextauth]/options";
-import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
+import { authOptions } from "@/app/api/auth/[...nextauth]/options";
+import dbConnect from "@/lib/dbConnect";
 import { app } from "@/lib/firebase";
-
+import ProductModel from "@/models/Product";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
+import { getServerSession } from "next-auth";
+import { NextRequest, NextResponse } from "next/server";
 
 const storage = getStorage(app);
 
-export const GET = async (request: Request) => {
+export const GET = async (
+    _: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) => {
     await dbConnect();
 
-    const { searchParams } = new URL(request.url);
-    const productId = searchParams.get('id');
+    const productId = (await params).id
     const session = await getServerSession(authOptions)
 
     if (!session || !session.user) {
@@ -62,7 +60,10 @@ export const GET = async (request: Request) => {
     }
 }
 
-export const POST = async (request: Request) => {
+export const PATCH = async (
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) => {
     await dbConnect();
     const session = await getServerSession(authOptions)
 
@@ -81,19 +82,19 @@ export const POST = async (request: Request) => {
     }
 
     try {
+        const productId = (await params).id;
         const formData = await request.formData();
-        const productId = formData.get("productId") as string;
         const title = formData.get("title") as string;
         const price = Number(formData.get("price"));
         const stock = Number(formData.get("stock"));
         const category = formData.get("category") as string;
-        // const qualities = formData.get("qualities") as string[];
+        const qualities = formData.getAll("qualities") as string[] || [];
         const description = formData.get("description") as string;
         const tagNumber = Number(formData.get("tagNumber"));
         const tax = Number(formData.get("tax"));
         const discount = Number(formData.get("discount"));
         const images = formData.getAll("images") as File[];
-        
+
         const product = await ProductModel.findById(productId);
 
         if (!product) {
@@ -107,7 +108,7 @@ export const POST = async (request: Request) => {
 
         for (const image of images) {
 
-            if(typeof image === 'string') {
+            if (typeof image === 'string') {
                 imagesUrl.push(image);
                 continue;
             }
@@ -117,14 +118,14 @@ export const POST = async (request: Request) => {
             const downloadURL = await getDownloadURL(snapshot.ref);
             imagesUrl.push(downloadURL);
         }
-    
+
 
         product.title = title;
         product.price = price;
         product.stock = stock;
         product.images = imagesUrl;
         product.category = category;
-        // product.qualities = qualities;
+        product.qualities = qualities;
         product.description = description;
         product.tagNumber = tagNumber;
         product.tax = tax;
@@ -140,6 +141,55 @@ export const POST = async (request: Request) => {
 
     } catch (error) {
         console.log("Error updating product");
+        console.error(error);
+
+        return NextResponse.json({
+            success: false,
+            message: "Internal server error"
+        }, { status: 500 })
+    }
+}
+
+export const DELETE = async (
+    _: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) => {
+    await dbConnect();
+
+    const productId = (await params).id
+    const session = await getServerSession(authOptions)
+
+    if (!session || !session.user) {
+        return NextResponse.json({
+            status: false,
+            message: "Not authenticated"
+        }, { status: 401 })
+    }
+
+    if (!session.user.isAdmin) {
+        return NextResponse.json({
+            status: false,
+            message: "Not allowed"
+        }, { status: 403 })
+    }
+
+    try {
+        const product = await ProductModel.findByIdAndDelete(productId);
+
+        if (!product) {
+            return NextResponse.json({
+                success: false,
+                message: "Product not found",
+            }, { status: 404 })
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: "Product deleted successfully",
+        }, { status: 200 })
+
+    } catch (error) {
+        console.log("Error getting product data");
         console.error(error);
 
         return NextResponse.json({

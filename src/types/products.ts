@@ -3,6 +3,7 @@ export interface Product {
     price: number;
     stock: number;
     images: (File | string)[];
+    qualities: string[];
     category: string;
     description: string;
     tagNumber: number;

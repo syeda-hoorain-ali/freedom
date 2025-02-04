@@ -23,10 +23,10 @@ export const productSchema = z.object({
         .array(z.union([z.instanceof(File), z.string()]))
         .min(1, { message: "At least one image is required" })
         .max(10, { message: "Cannot upload more than 10 images" }),
-    // qualities: z
-    //     .array(z.string())
-    //     .min(1, { message: "At least one quality must be provided" })
-    //     .max(10, { message: "Cannot have more than 10 qualities" }),
+    qualities: z
+        .array(z.string())
+        .min(1, { message: "At least one quality must be provided" })
+        .max(10, { message: "Cannot have more than 10 qualities" }),
     stock: z
         .number()
         .min(1, { message: "Stock must be at least 1" })

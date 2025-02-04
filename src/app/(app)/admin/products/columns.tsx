@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
-import { Eye, EyeIcon, MoreHorizontal, PencilIcon, Trash2Icon } from "lucide-react";
+import { EyeIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import Image from "next/image";
-
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { deleteProduct } from "@/lib/data";
 
 export interface Product {
   _id: string;
@@ -68,35 +69,57 @@ export const columns: ColumnDef<Product>[] = [
       const productId = row.original._id;
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <AlertDialog>
 
-            <DropdownMenuItem>
-              <Link href={`/p/${productId}`} target="_blank" className="flex gap-1 w-full">
-                <EyeIcon className="size-4" /> View
-              </Link>
-            </DropdownMenuItem>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontalIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-            <DropdownMenuItem>
-              <Link href={`/admin/product/edit/${productId}`} className="flex gap-1 w-full">
-                <PencilIcon className="size-4" /> Edit
-              </Link>
-            </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href={`/p/${productId}`} target="_blank" className="flex gap-1 w-full">
+                  <EyeIcon className="size-4" /> View
+                </Link>
+              </DropdownMenuItem>
 
-            <DropdownMenuItem>
-              <Link href={`/admin/product/delete/${productId}`} className="flex gap-1 w-full">
-                <Trash2Icon className="size-4" /> Delete
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem>
+                <Link href={`/admin/product/edit/${productId}`} className="flex gap-1 w-full">
+                  <PencilIcon className="size-4" /> Edit
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem>
+                <AlertDialogTrigger className="flex gap-1 w-full">
+                  <Trash2Icon className="size-4" /> Delete
+                </AlertDialogTrigger>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your account
+                and remove your data from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={async () => {
+                const response = await deleteProduct(row.original._id)
+                console.log(response);
+                console.log("deleting product");
+              }}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+
+        </AlertDialog>
       )
     },
   },

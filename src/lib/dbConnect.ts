@@ -16,7 +16,7 @@ const dbConnect = async () => {
     } catch (error) {
         console.log("Database connection failed");
         console.log(error);
-        process.exit(1);
+        // process.exit(1);
     }
 }
 
